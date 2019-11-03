@@ -1,0 +1,11 @@
+{
+  "targets": {
+    "fir-ivy-live-feed": {
+      "hosting": {
+        "firebase-ivy-live-feed": [
+          "fir-ivy-live-feed"
+        ]
+      }
+    }
+  }
+}

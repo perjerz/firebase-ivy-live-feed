@@ -1,0 +1,19 @@
+{
+  "hosting": [
+    {
+      "target": "firebase-ivy-live-feed",
+      "public": "dist/firebase-ivy-live-feed",
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ],
+      "rewrites": [
+        {
+          "source": "**",
+          "destination": "/index.html"
+        }
+      ]
+    }
+  ]
+}
