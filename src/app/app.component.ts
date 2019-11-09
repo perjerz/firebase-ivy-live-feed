@@ -1,5 +1,4 @@
 import { Component } from '@angular/core';
-import { DomSanitizer } from '@angular/platform-browser';
 import { fromEvent } from 'rxjs';
 import { map, switchMap, take } from 'rxjs/operators';
 import { FeedDialogComponent } from './feed-dialog/feed-dialog.component';
@@ -11,7 +10,7 @@ import { MatDialog } from '@angular/material';
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent {
-  constructor(private matDialog: MatDialog, private sanitizer: DomSanitizer) {}
+  constructor(private matDialog: MatDialog) {}
 
   trackByKey(index: number) {
     return index;
