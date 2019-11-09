@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
-import { fromPromise } from 'rxjs/internal-compatibility';
-import { map } from 'rxjs/operators';
+import { DomSanitizer } from '@angular/platform-browser';
+import { fromEvent } from 'rxjs';
+import { map, switchMap, take } from 'rxjs/operators';
 import { FeedDialogComponent } from './feed-dialog/feed-dialog.component';
 import { MatDialog } from '@angular/material';
 
@@ -10,38 +11,35 @@ import { MatDialog } from '@angular/material';
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent {
-  constructor(private matDialog: MatDialog) {}
+  constructor(private matDialog: MatDialog, private sanitizer: DomSanitizer) {}
 
   trackByKey(index: number) {
     return index;
   }
 
   openFeedDialog() {
-    fromPromise(
-      navigator.mediaDevices.getUserMedia({
-        audio: false,
-        video: { facingMode: 'environment' }
-      })
-    ).pipe(
-      map((stream: MediaStream) => {
-        const video = document.createElement('video');
-        video.width = 1024;
-        video.height = 1024;
-        const canvas = document.createElement('canvas');
-        video.srcObject = stream;
-        canvas.width = video.width;
-        canvas.height = video.height;
-        const context = canvas.getContext('2d');
-        context.drawImage(video, 0, 0);
-        const img = canvas.toDataURL('img/png', 1.0);
-        console.log(img);
-        return img;
-      })
-    ).subscribe(img => {
-        this.matDialog.open(FeedDialogComponent, {data: img});
-    },
-    err => {
+    const input: HTMLInputElement = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    const readFile$ = (fileReader: FileReader) =>  {
+      return fromEvent(fileReader, 'load').pipe(take(1));
+    };
+    const imageSelected$ = fromEvent(input, 'change').pipe(
+      take(1),
+      map(() => input.files[0])
+    );
+    imageSelected$.pipe(
+      switchMap(file => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        return readFile$(reader).pipe(map(() => reader.result));
+      }),
+    ).subscribe(result => {
+        const base64 = result;
+        this.matDialog.open(FeedDialogComponent, { data: base64 });
+    }, err => {
       console.error(err);
     });
+    input.click();
   }
 }
