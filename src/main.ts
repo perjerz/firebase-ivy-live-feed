@@ -10,3 +10,8 @@ if (environment.production) {
 
 platformBrowserDynamic().bootstrapModule(AppModule)
   .catch(err => console.error(err));
+
+// import { AppComponent } from './app/app.component';
+// import { ɵrenderComponent as renderComponent } from '@angular/core';
+
+// renderComponent(AppComponent);

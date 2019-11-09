@@ -12,11 +12,11 @@
 // Define the palettes for your theme using the Material Design palettes available in palette.scss
 // (imported above). For each palette, you can optionally specify a default, lighter, and darker
 // hue. Available color palettes: https://material.io/design/color/
-$firebase-ivy-live-feed-primary: mat-palette($mat-indigo);
-$firebase-ivy-live-feed-accent: mat-palette($mat-pink, A200, A100, A400);
+$firebase-ivy-live-feed-primary: mat-palette($mat-blue);
+$firebase-ivy-live-feed-accent: mat-palette($mat-amber, 700, A100, A400);
 
 // The warn palette is optional (defaults to red).
-$firebase-ivy-live-feed-warn: mat-palette($mat-red);
+$firebase-ivy-live-feed-warn: mat-palette($mat-amber);
 
 // Create the theme object (a Sass map containing all of the palettes).
 $firebase-ivy-live-feed-theme: mat-light-theme($firebase-ivy-live-feed-primary, $firebase-ivy-live-feed-accent, $firebase-ivy-live-feed-warn);
