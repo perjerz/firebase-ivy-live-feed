@@ -1,6 +1,9 @@
 <picture>
-  <img [src]="data" />
+  <img style="width: 100%;" [src]="data" />
 </picture>
-<mat-form-field>
-  <textarea matInput placeholder="What's happening?"></textarea>
-</mat-form-field>
+<form style="display: flex; flex-direction: column; margin-top: 1em;" (submit)="post()">
+  <mat-form-field>
+    <textarea matInput placeholder="What's happening?" maxlength="140"></textarea>
+  </mat-form-field>
+  <button mat-button color="primary" aria-label="post button" type="submit" style="align-self: flex-end;">Post</button>
+</form>

@@ -1,7 +1,7 @@
 import { FeedDialogComponent } from './feed-dialog.component';
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { MatInputModule } from '@angular/material';
+import { MatButtonModule, MatFormFieldModule, MatInputModule } from '@angular/material';
 
 
 
@@ -10,7 +10,8 @@ import { MatInputModule } from '@angular/material';
   imports: [
     CommonModule,
     MatInputModule,
-
+    MatFormFieldModule,
+    MatButtonModule
   ],
   entryComponents: [FeedDialogComponent]
 })

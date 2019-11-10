@@ -16,8 +16,9 @@ export class FeedDialogComponent implements OnInit {
     ) {
   }
 
-  ngOnInit() {
-    console.log(this.data);
-  }
+  ngOnInit() { }
 
+  post() {
+
+  }
 }

@@ -19,7 +19,7 @@ export class AppComponent {
   openFeedDialog() {
     const input: HTMLInputElement = document.createElement('input');
     input.type = 'file';
-    input.accept = 'image/*';
+    input.accept = 'image/jpeg, image/png';
     const readFile$ = (fileReader: FileReader) =>  {
       return fromEvent(fileReader, 'load').pipe(take(1));
     };
@@ -35,7 +35,7 @@ export class AppComponent {
       }),
     ).subscribe(result => {
         const base64 = result;
-        this.matDialog.open(FeedDialogComponent, { data: base64 });
+        this.matDialog.open(FeedDialogComponent, { maxWidth: '95vw', data: base64 });
     }, err => {
       console.error(err);
     });
