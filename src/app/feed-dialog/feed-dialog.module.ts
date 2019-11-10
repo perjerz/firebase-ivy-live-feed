@@ -1,9 +1,8 @@
+import { FormsModule } from '@angular/forms';
 import { FeedDialogComponent } from './feed-dialog.component';
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { MatButtonModule, MatFormFieldModule, MatInputModule } from '@angular/material';
-
-
+import { MatButtonModule, MatDialogModule, MatFormFieldModule, MatInputModule } from '@angular/material';
 
 @NgModule({
   declarations: [FeedDialogComponent],
@@ -11,7 +10,9 @@ import { MatButtonModule, MatFormFieldModule, MatInputModule } from '@angular/ma
     CommonModule,
     MatInputModule,
     MatFormFieldModule,
-    MatButtonModule
+    MatButtonModule,
+    MatDialogModule,
+    FormsModule
   ],
   entryComponents: [FeedDialogComponent]
 })

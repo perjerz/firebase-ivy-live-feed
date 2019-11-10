@@ -21,4 +21,8 @@ export class FeedDialogComponent implements OnInit {
   post() {
 
   }
+
+  imageError(err: Event) {
+    this.matDialogRef.close();
+  }
 }

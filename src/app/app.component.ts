@@ -24,7 +24,6 @@ export class AppComponent {
       return fromEvent(fileReader, 'load').pipe(take(1));
     };
     const imageSelected$ = fromEvent(input, 'change').pipe(
-      take(1),
       map(() => input.files[0])
     );
     imageSelected$.pipe(
