@@ -1,8 +1,11 @@
 import { Component } from '@angular/core';
-import { from, fromEvent, of, race, throwError, timer } from 'rxjs';
-import { map, switchMap, take, tap } from 'rxjs/operators';
+import { fromEvent, of, race, throwError, timer } from 'rxjs';
+import { map, switchMap, take } from 'rxjs/operators';
 import { FeedDialogComponent } from './feed-dialog/feed-dialog.component';
 import { MatDialog, MatSnackBar } from '@angular/material';
+
+const MAX_FILE_SIZE =  4 * 1024 * 1024; // 4 * Mega * Bytes
+const MAX_TIME_IMAGE_LOAD = 100;
 
 @Component({
   selector: 'app-root',
@@ -16,7 +19,7 @@ export class AppComponent {
     return index;
   }
 
-  openFeedDialog() {
+  private pickImage() {
     const input: HTMLInputElement = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/jpeg, image/png';
@@ -24,43 +27,48 @@ export class AppComponent {
       input.click();
     }, 0);
 
-    const imageSelected$ = fromEvent(input, 'change').pipe(
+    return fromEvent(input, 'change').pipe(
       switchMap(() => {
         const file = input.files[0];
-        const MAX_FILE_SIZE =  4 * 1024 * 1024; // 4 * Mega * BYTE
         if (file.size > MAX_FILE_SIZE) {
-          return throwError('Too large file. File is larger than 4 MB');
+          return throwError('Too large file. File must be less than 4 MB');
         }
         return of(file);
       })
     );
-    const img: HTMLImageElement = document.createElement('img');
+  }
 
+  readFileToBase64(file: File) {
+    const reader = new FileReader();
     const readFile$ = (fileReader: FileReader) => {
       return fromEvent(fileReader, 'load').pipe(take(1));
     };
+    setTimeout(() => {
+      reader.readAsDataURL(file);
+    }, 0);
+    return readFile$(reader).pipe(map(() => reader.result as string));
+  }
 
-    imageSelected$
+  checkImageError(base64: string) {
+    const img: HTMLImageElement = document.createElement('img');
+    setTimeout(() => {
+      img.src = base64;
+    }, 0);
+    return race(
+      fromEvent(img, 'error').pipe(
+        take(1),
+        switchMap(() => throwError(''))
+      ),
+      timer(MAX_TIME_IMAGE_LOAD).pipe(map(() => base64))
+    );
+  }
+
+  openFeedDialog() {
+    const image$ = this.pickImage();
+    image$
       .pipe(
-        switchMap(file => {
-          const reader = new FileReader();
-          setTimeout(() => {
-            reader.readAsDataURL(file);
-          }, 0);
-          return readFile$(reader).pipe(map(() => reader.result));
-        }),
-        switchMap((result: string) => {
-          setTimeout(() => {
-            img.src = result;
-          }, 0);
-          return race(
-            fromEvent(img, 'error').pipe(
-              take(1),
-              switchMap(() => throwError(''))
-            ),
-            timer(100).pipe(map(() => result))
-          );
-        })
+        switchMap(file => this.readFileToBase64(file)),
+        switchMap(base64 => this.checkImageError(base64))
       )
       .subscribe(
         base64 => {
@@ -70,7 +78,7 @@ export class AppComponent {
           });
         },
         err => {
-          this.matSnackbar.open('Wrong Image');
+          this.matSnackbar.open(err);
         }
       );
   }
