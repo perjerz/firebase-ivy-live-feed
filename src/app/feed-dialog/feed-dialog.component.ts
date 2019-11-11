@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewEncapsulation, ChangeDetectionStrategy, Inject } from '@angular/core';
+import { Component, OnInit, ViewEncapsulation, ChangeDetectionStrategy, Inject, ViewChild, ElementRef } from '@angular/core';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material';
 
 @Component({
@@ -9,6 +9,7 @@ import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class FeedDialogComponent implements OnInit {
+  @ViewChild('textArea', { static: true }) textArea: ElementRef<HTMLTextAreaElement>;
 
   constructor(
     @Inject(MAT_DIALOG_DATA) public data: string,
@@ -19,10 +20,10 @@ export class FeedDialogComponent implements OnInit {
   ngOnInit() { }
 
   post() {
-
+    console.log(this.textArea.nativeElement.value);
   }
 
-  imageError(err: Event) {
+  imageError() {
     this.matDialogRef.close();
   }
 }

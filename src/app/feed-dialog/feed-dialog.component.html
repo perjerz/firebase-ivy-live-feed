@@ -1,9 +1,9 @@
 <mat-dialog-content>
-  <img style="width: 100%;" [src]="data" (error)="imageError($event)" />
+  <img style="width: 100%;" [src]="data" (error)="imageError()" />
 </mat-dialog-content>
-<form mat-dialog-actions style="margin-top: 1em; display: flex; flex-direction: column; align-items: normal" (ngSubmit)="post()">
+<form mat-dialog-actions style="margin-top: 1em; display: flex; flex-direction: column; align-items: normal" (submit)="post()">
   <mat-form-field>
-    <textarea matInput placeholder="What's happening?" maxlength="140"></textarea>
+    <textarea #textArea matInput placeholder="What's happening?" maxlength="140"></textarea>
   </mat-form-field>
   <button mat-button color="primary" aria-label="post button" type="submit" style="align-self: flex-end;">Post</button>
 </form>

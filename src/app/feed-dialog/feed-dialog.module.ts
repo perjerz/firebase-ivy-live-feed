@@ -12,7 +12,6 @@ import { MatButtonModule, MatDialogModule, MatFormFieldModule, MatInputModule } 
     MatFormFieldModule,
     MatButtonModule,
     MatDialogModule,
-    FormsModule
   ],
   entryComponents: [FeedDialogComponent]
 })
