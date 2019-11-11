@@ -31,7 +31,7 @@ export class AppComponent {
       switchMap(() => {
         const file = input.files[0];
         if (file.size > MAX_FILE_SIZE) {
-          return throwError('Too large file. File must be less than 4 MB');
+          return throwError('Too large file. File must be less than 4 MB.');
         }
         return of(file);
       })
@@ -57,7 +57,7 @@ export class AppComponent {
     return race(
       fromEvent(img, 'error').pipe(
         take(1),
-        switchMap(() => throwError(''))
+        switchMap(() => throwError('You image is failed to load.'))
       ),
       timer(MAX_TIME_IMAGE_LOAD).pipe(map(() => base64))
     );
