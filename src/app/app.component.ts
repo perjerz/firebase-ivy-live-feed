@@ -23,10 +23,7 @@ export class AppComponent {
     const input: HTMLInputElement = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/jpeg, image/png';
-    setTimeout(() => {
-      input.click();
-    }, 0);
-
+    input.click();
     return fromEvent(input, 'change').pipe(
       switchMap(() => {
         const file = input.files[0];
@@ -43,17 +40,13 @@ export class AppComponent {
     const readFile$ = (fileReader: FileReader) => {
       return fromEvent(fileReader, 'load').pipe(take(1));
     };
-    setTimeout(() => {
-      reader.readAsDataURL(file);
-    }, 0);
+    reader.readAsDataURL(file);
     return readFile$(reader).pipe(map(() => reader.result as string));
   }
 
   checkImageError(base64: string) {
     const img: HTMLImageElement = document.createElement('img');
-    setTimeout(() => {
-      img.src = base64;
-    }, 0);
+    img.src = base64;
     return race(
       fromEvent(img, 'error').pipe(
         take(1),

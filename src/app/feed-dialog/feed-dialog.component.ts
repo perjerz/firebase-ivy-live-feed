@@ -1,5 +1,5 @@
 import { Component, OnInit, ViewEncapsulation, ChangeDetectionStrategy, Inject, ViewChild, ElementRef } from '@angular/core';
-import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material';
+import { MatDialogRef, MAT_DIALOG_DATA, MatSnackBar } from '@angular/material';
 
 @Component({
   selector: 'app-feed-dialog',
@@ -13,7 +13,8 @@ export class FeedDialogComponent implements OnInit {
 
   constructor(
     @Inject(MAT_DIALOG_DATA) public data: string,
-    private matDialogRef: MatDialogRef<FeedDialogComponent>
+    private matDialogRef: MatDialogRef<FeedDialogComponent>,
+    private matSnackbar: MatSnackBar
     ) {
   }
 
@@ -24,6 +25,9 @@ export class FeedDialogComponent implements OnInit {
   }
 
   imageError() {
+    this.matDialogRef.afterClosed().subscribe(() => {
+      this.matSnackbar.open('You image is failed to load.');
+    });
     this.matDialogRef.close();
   }
 }
