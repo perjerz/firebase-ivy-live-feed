@@ -1,28 +1,46 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { AngularFireAuth } from '@angular/fire/auth';
-import { fromEvent, of, race, throwError, timer } from 'rxjs';
-import { map, switchMap, take } from 'rxjs/operators';
+import { AngularFirestore } from '@angular/fire/firestore';
+import { EMPTY, fromEvent, Observable, of, race, throwError, timer } from 'rxjs';
+import { map, switchMap, take, tap, withLatestFrom } from 'rxjs/operators';
+import { AppService } from './app.service';
 import { FeedDialogComponent } from './feed-dialog/feed-dialog.component';
 import { MatDialog, MatSnackBar } from '@angular/material';
 import * as firebase from 'firebase';
 
-const MAX_FILE_SIZE =  4 * 1024 * 1024; // 4 * Mega * Bytes
+const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4 * Mega * Bytes
 const IMAGE_LOAD_TIMEOUT = 100;
+
+interface Post {
+  postUserId: string;
+  imageUrl: string;
+  message: string;
+  likeUserIds: string[];
+}
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss']
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
+  posts$: Observable<Post[]>;
+  user$: Observable<firebase.User>;
+
   constructor(
     private matDialog: MatDialog,
     private matSnackbar: MatSnackBar,
-    public auth: AngularFireAuth,
+    private afs: AngularFirestore,
+    private auth: AngularFireAuth,
+    private appService: AppService,
   ) {}
 
   trackByKey(index: number) {
     return index;
+  }
+  ngOnInit() {
+    this.user$ = this.auth.user;
+    this.posts$ = this.afs.collection<Post>('posts').valueChanges();
   }
 
   private pickImage() {
@@ -63,32 +81,55 @@ export class AppComponent {
   }
 
   openFeedDialog() {
+    let uploadImage: File;
     const image$ = this.pickImage();
     image$
       .pipe(
+        tap(file => {
+          uploadImage = file;
+        }),
         switchMap(file => this.readFileToBase64(file)),
-        switchMap(base64 => this.checkImageError(base64))
+        switchMap(base64 => this.checkImageError(base64)),
+        switchMap(base64 =>
+          this.matDialog
+            .open<FeedDialogComponent, unknown, string>(FeedDialogComponent, {
+              maxWidth: '95vw',
+              data: base64
+            })
+            .afterClosed()
+        ),
+        switchMap(message => {
+          if (message === undefined) {
+            return EMPTY;
+          }
+          return of(message);
+        }),
+        withLatestFrom(this.user$),
+        switchMap(([message, user]) => this.appService.post(user.uid, uploadImage, message))
       )
       .subscribe(
-        base64 => {
-          this.matDialog.open(FeedDialogComponent, {
-            maxWidth: '95vw',
-            data: base64
-          });
+        () => {
+          this.matSnackbar.open('Posted successfully!');
         },
         err => {
           this.matSnackbar.open(err);
-        }
+        },
+        () => {
+          this.matSnackbar.open('What\'s wrong? Why didn\'t you post?');
+        },
       );
   }
 
   signIn() {
     const authProvider = new firebase.auth.FacebookAuthProvider();
     authProvider.addScope('email');
-    this.auth.auth.signInWithPopup(authProvider).then(user => {
-      this.matSnackbar.open('Sign in successfully.');
-    }).catch(err => {
-      this.matSnackbar.open(err.toString());
-    });
+    this.auth.auth
+      .signInWithPopup(authProvider)
+      .then(user => {
+        this.matSnackbar.open('Sign in successfully.');
+      })
+      .catch(err => {
+        this.matSnackbar.open(err.toString());
+      });
   }
 }

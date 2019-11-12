@@ -21,7 +21,8 @@ export class FeedDialogComponent implements OnInit {
   ngOnInit() { }
 
   post() {
-    console.log(this.textArea.nativeElement.value);
+    const { value: message } = this.textArea.nativeElement;
+    this.matDialogRef.close(message);
   }
 
   imageError() {
