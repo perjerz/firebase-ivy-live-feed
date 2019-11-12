@@ -35,7 +35,7 @@ export class AppComponent {
     );
   }
 
-  readFileToBase64(file: File) {
+  private readFileToBase64(file: File) {
     const reader = new FileReader();
     const readFile$ = (fileReader: FileReader) => {
       return fromEvent(fileReader, 'load').pipe(take(1));
@@ -44,7 +44,7 @@ export class AppComponent {
     return readFile$(reader).pipe(map(() => reader.result as string));
   }
 
-  checkImageError(base64: string) {
+  private checkImageError(base64: string) {
     const img: HTMLImageElement = document.createElement('img');
     img.src = base64;
     return race(
