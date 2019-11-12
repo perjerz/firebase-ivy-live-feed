@@ -2,6 +2,10 @@
   <mat-toolbar-row>
     <span>Firebase Dev Day</span>
     <span class="spacer"></span>
+    <img *ngIf="auth.user | async as user; else login" style="height: 50px" alt="user profile" [src]="user.photoURL" />
+    <ng-template #login>
+      <button mat-button type="button" aria-label="sign in button" color="accent" (click)="signIn()">Sign in</button>
+    </ng-template>
     <img style="height: 50px" alt="Firebase Logo" src="./assets/logo-logomark.svg" />
   </mat-toolbar-row>
 </mat-toolbar>
@@ -30,6 +34,6 @@
     </mat-card-actions>
   </mat-card>
 </div>
-<button mat-mini-fab aria-label="icon-button with a add icon" color="primary" class="add-btn" type="button" (click)="openFeedDialog()">
+<button *ngIf="auth.user | async" mat-mini-fab aria-label="icon-button with a add icon" color="primary" class="add-btn" type="button" (click)="openFeedDialog()">
   <mat-icon>add</mat-icon>
 </button>

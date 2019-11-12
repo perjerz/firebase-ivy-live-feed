@@ -1,11 +1,13 @@
 import { Component } from '@angular/core';
+import { AngularFireAuth } from '@angular/fire/auth';
 import { fromEvent, of, race, throwError, timer } from 'rxjs';
 import { map, switchMap, take } from 'rxjs/operators';
 import { FeedDialogComponent } from './feed-dialog/feed-dialog.component';
 import { MatDialog, MatSnackBar } from '@angular/material';
+import * as firebase from 'firebase';
 
 const MAX_FILE_SIZE =  4 * 1024 * 1024; // 4 * Mega * Bytes
-const MAX_TIME_IMAGE_LOAD = 100;
+const IMAGE_LOAD_TIMEOUT = 100;
 
 @Component({
   selector: 'app-root',
@@ -13,7 +15,11 @@ const MAX_TIME_IMAGE_LOAD = 100;
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent {
-  constructor(private matDialog: MatDialog, private matSnackbar: MatSnackBar) {}
+  constructor(
+    private matDialog: MatDialog,
+    private matSnackbar: MatSnackBar,
+    public auth: AngularFireAuth,
+  ) {}
 
   trackByKey(index: number) {
     return index;
@@ -52,7 +58,7 @@ export class AppComponent {
         take(1),
         switchMap(() => throwError('You image is failed to load.'))
       ),
-      timer(MAX_TIME_IMAGE_LOAD).pipe(map(() => base64))
+      timer(IMAGE_LOAD_TIMEOUT).pipe(map(() => base64))
     );
   }
 
@@ -74,5 +80,15 @@ export class AppComponent {
           this.matSnackbar.open(err);
         }
       );
+  }
+
+  signIn() {
+    const authProvider = new firebase.auth.FacebookAuthProvider();
+    authProvider.addScope('email');
+    this.auth.auth.signInWithPopup(authProvider).then(user => {
+      this.matSnackbar.open('Sign in successfully.');
+    }).catch(err => {
+      this.matSnackbar.open(err.toString());
+    });
   }
 }
