@@ -20,16 +20,18 @@
       <p>{{post.message}}</p>
     </mat-card-content>
     <mat-card-actions>
-      <button mat-icon-button aria-label="icon-button with a heart icon">
-        <mat-icon *ngIf="post?.likeUserIds?.length as likes" [matBadge]="likes" matBadgeColor="primary" matBadgePosition="above after" style="color: #c62828;">favorite_border</mat-icon>
+      <button mat-icon-button aria-label="icon-button with a heart icon" (click)="like()">
+        <mat-icon *ngIf="post?.likeUserIds?.length as likes" [matBadge]="likes"
+                  matBadgeColor="primary" matBadgePosition="above after" style="color: #c62828;"
+        >{{!myLike ? 'favorite_border' : 'favorite'}}</mat-icon>
       </button>
-      <!-- TODO: Share Action -->
-      <button mat-icon-button aria-label="icon-button with a share icon">
+      <button mat-icon-button aria-label="icon-button with a share icon" (click)="share()">
         <mat-icon style="color: #2962ff;" aria-hidden="false" aria-label="share icon">share</mat-icon>
       </button>
     </mat-card-actions>
   </mat-card>
 </div>
-<button *ngIf="user$ | async" mat-mini-fab aria-label="icon-button with a add icon" color="primary" class="add-btn" type="button" (click)="openFeedDialog()">
+<button *ngIf="user$ | async" mat-mini-fab aria-label="icon-button with a add icon"
+        color="primary" class="add-btn" type="button" (click)="openFeedDialog()">
   <mat-icon>add</mat-icon>
 </button>
