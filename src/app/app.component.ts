@@ -47,6 +47,7 @@ export class AppComponent implements OnInit {
     const input: HTMLInputElement = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/jpeg, image/png';
+    // TODO: test input click because it doesn't work in some browsers
     input.click();
     return fromEvent(input, 'change').pipe(
       switchMap(() => {
@@ -83,6 +84,12 @@ export class AppComponent implements OnInit {
   openFeedDialog() {
     let uploadImage: File;
     const image$ = this.pickImage();
+    const message$ = (base64: string) => this.matDialog
+    .open<FeedDialogComponent, unknown, string>(FeedDialogComponent, {
+      maxWidth: '95vw',
+      data: base64
+    })
+    .afterClosed();
     image$
       .pipe(
         tap(file => {
@@ -90,14 +97,7 @@ export class AppComponent implements OnInit {
         }),
         switchMap(file => this.readFileToBase64(file)),
         switchMap(base64 => this.checkImageError(base64)),
-        switchMap(base64 =>
-          this.matDialog
-            .open<FeedDialogComponent, unknown, string>(FeedDialogComponent, {
-              maxWidth: '95vw',
-              data: base64
-            })
-            .afterClosed()
-        ),
+        switchMap(base64 => message$(base64)),
         switchMap(message => {
           if (message === undefined) {
             return EMPTY;
