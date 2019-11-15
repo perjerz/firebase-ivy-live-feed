@@ -13,9 +13,9 @@
   <mat-card style="max-width: 400px; margin: 1em;" *ngFor="let post of posts$ | async; index as i; trackBy: trackByKey">
     <mat-card-header>
       <div mat-card-avatar class="header-image"></div>
-      <mat-card-title>{{post.postUserId}}</mat-card-title>
+    <mat-card-title>{{post.postUserId}}</mat-card-title>
     </mat-card-header>
-    <img mat-card-image [src]="post.imageUrl" alt="post image">
+    <img style="margin-top: 1em;" mat-card-image [src]="post.imageUrl" alt="post image">
     <mat-card-content>
       <p>{{post.message}}</p>
     </mat-card-content>
