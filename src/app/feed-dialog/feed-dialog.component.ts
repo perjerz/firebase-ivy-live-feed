@@ -27,7 +27,7 @@ export class FeedDialogComponent implements OnInit {
 
   imageError() {
     this.matDialogRef.afterClosed().subscribe(() => {
-      this.matSnackbar.open('You image is failed to load.');
+      this.matSnackbar.open('You image is failed to load.', '', { duration: 2000 });
     });
     this.matDialogRef.close();
   }

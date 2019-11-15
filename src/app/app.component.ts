@@ -73,13 +73,13 @@ export class AppComponent implements OnInit {
       )
       .subscribe(
         () => {
-          this.matSnackbar.open('Posted successfully!');
+          this.matSnackbar.open('Posted successfully!', '', { duration: 1000 });
         },
         err => {
-          this.matSnackbar.open(err);
+          this.matSnackbar.open(err, '', { duration: 3000 });
         },
         () => {
-          this.matSnackbar.open('What\'s wrong? Why didn\'t you post?');
+          this.matSnackbar.open('What\'s wrong? Why didn\'t you post?', '', { duration: 2000});
         },
       );
   }
@@ -95,6 +95,11 @@ export class AppComponent implements OnInit {
       .catch(err => {
         this.matSnackbar.open(err.toString());
       });
+  }
+
+
+  signOut() {
+    this.auth.auth.signOut();
   }
 
   like() {

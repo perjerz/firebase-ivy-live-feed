@@ -12,6 +12,7 @@ import {
   MatDialogModule,
   MatSnackBarModule,
   MatBadgeModule,
+  MatMenuModule,
 } from '@angular/material';
 import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
@@ -33,6 +34,7 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
     MatDialogModule,
     MatSnackBarModule,
     MatBadgeModule,
+    MatMenuModule,
     FeedDialogModule,
     AngularFireModule.initializeApp(environment.firebase),
     AngularFireAuthModule,
