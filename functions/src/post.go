@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -11,7 +12,7 @@ import (
 
 	"cloud.google.com/go/firestore"
 	firebase "firebase.google.com/go"
-	"firebase.google.com/go/auth"
+	auth "firebase.google.com/go/auth"
 	"firebase.google.com/go/storage"
 )
 
@@ -62,15 +63,11 @@ func init() {
 	}
 }
 
-func PostImage(w http.ResponseWriter, r *http.Request) {
-
-	defer fireStoreClient.Close()
+func parseToken(r *http.Request) (*auth.Token, error) {
 	auth := r.Header.Get("Authorization")
 	cookie, _ := r.Cookie("__session")
-
 	if !strings.HasPrefix(auth, "Bearer ") && cookie == nil {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return
+		return nil, errors.New("Unauthorized")
 	}
 
 	var idToken string
@@ -79,25 +76,34 @@ func PostImage(w http.ResponseWriter, r *http.Request) {
 	} else if cookie != nil {
 		idToken = cookie.Value
 	} else {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return
+		return nil, errors.New("Unauthorized")
 	}
 
 	token, err := authClient.VerifyIDToken(ctx, idToken)
+	return token, nil
+}
 
+func PostImage(w http.ResponseWriter, r *http.Request) {
+	defer fireStoreClient.Close()
+	token, err := parseToken(r)
 	if err != nil {
 		log.Println(err)
-		http.Error(w, "error", http.StatusUnauthorized)
+		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
 
 	f, fh, err := r.FormFile("image")
 	defer f.Close()
-
 	if err != nil {
 		log.Println(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
+	}
+
+	err = r.ParseMultipartForm(4 * 1024 * 1024)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
 
 	buffer := make([]byte, 512)
@@ -114,7 +120,6 @@ func PostImage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	bucketHandle, err := storageClient.DefaultBucket()
-
 	if err != nil {
 		msg := fmt.Sprintf("Could not write file: %v", err)
 		log.Println(msg)
@@ -123,7 +128,6 @@ func PostImage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sw := bucketHandle.Object(fh.Filename).NewWriter(ctx)
-
 	if _, err = io.Copy(sw, f); err != nil {
 		msg := fmt.Sprintf("Could not upload file: %v", err)
 		log.Println(msg)
@@ -139,17 +143,16 @@ func PostImage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	attrs, err := bucketHandle.Attrs(ctx)
-
 	if err != nil {
 		log.Println(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
 	u, _ := url.Parse("/" + attrs.Name + "/" + sw.Attrs().Name)
 
 	// TODO: sanitize message
 	message := fh.Header.Get("message")
-
 	post := Post{
 		UserID:  token.UID,
 		Image:   u,
@@ -157,7 +160,6 @@ func PostImage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ref, _, err := fireStoreClient.Collection("posts").Add(ctx, post)
-
 	if err != nil {
 		log.Println(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
