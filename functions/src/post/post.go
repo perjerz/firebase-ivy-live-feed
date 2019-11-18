@@ -1,4 +1,4 @@
-package main
+package post
 
 import (
 	"context"
@@ -16,6 +16,7 @@ import (
 	"firebase.google.com/go/storage"
 )
 
+// Post is the post document store in FireStore
 type Post struct {
 	UserID      string   `json:"postUserId"`
 	Image       string   `json:"imageUrl""`
@@ -32,33 +33,29 @@ var (
 
 func init() {
 	ctx = context.Background()
-	config := &firebase.Config{
-		ProjectID:     "fir-ivy-live-feed",
-		DatabaseURL:   "https://fir-ivy-live-feed.firebaseio.com",
-		StorageBucket: "fir-ivy-live-feed.appspot.com",
-	}
 
-	app, err := firebase.NewApp(ctx, config)
+	app, err := firebase.NewApp(ctx, nil)
 	if err != nil {
-		log.Println(err)
+		log.Fatalf("firebase.NewApp: %v", err)
 		return
 	}
 
 	storageClient, err = app.Storage(ctx)
 	if err != nil {
-		log.Println(err)
+		log.Fatalf("app.Storage: %v", err)
 		return
 	}
 
 	fireStoreClient, err = app.Firestore(ctx)
 	if err != nil {
-		log.Println(err)
+		log.Fatalf("app.Firestore: %v", err)
 		return
 	}
 
 	authClient, err = app.Auth(ctx)
 	if err != nil {
-		log.Println(err)
+		fireStoreClient.Close()
+		log.Fatalf("app.Auth: %v", err)
 		return
 	}
 }
@@ -80,14 +77,15 @@ func parseToken(r *http.Request) (*auth.Token, error) {
 	}
 
 	token, err := authClient.VerifyIDToken(ctx, idToken)
-	return token, nil
+	return token, err
 }
 
+// PostImage is triggered by HTTP Request
 func PostImage(w http.ResponseWriter, r *http.Request) {
 	defer fireStoreClient.Close()
 	token, err := parseToken(r)
 	if err != nil {
-		log.Println(err)
+		log.Fatalf("parseToken: %v", err)
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
@@ -95,56 +93,53 @@ func PostImage(w http.ResponseWriter, r *http.Request) {
 	f, fh, err := r.FormFile("image")
 	defer f.Close()
 	if err != nil {
-		log.Println(err)
+		log.Fatalf("r.FormFile: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	err = r.ParseMultipartForm(4 * 1024 * 1024)
 	if err != nil {
-		log.Println(err)
+		log.Fatalf("r.ParseMultipartForm: %v", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
 
 	buffer := make([]byte, 512)
 	if _, err = f.Read(buffer); err != nil {
-		msg := fmt.Sprintf("Could not get image: %v", err)
-		log.Println(msg)
+		log.Fatalf("f.Read: %v", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	if http.DetectContentType(buffer) == "application/octet-stream" {
+		log.Fatalf("UID %v posts wrong image", token.UID)
 		http.Error(w, "Image is not valid.", http.StatusBadRequest)
 		return
 	}
 
 	bucketHandle, err := storageClient.DefaultBucket()
 	if err != nil {
-		msg := fmt.Sprintf("Could not write file: %v", err)
-		log.Println(msg)
+		log.Fatalf("storageClient.DefaultBucket: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
-	sw := bucketHandle.Object(fh.Filename).NewWriter(ctx)
+	obj := bucketHandle.Object(fh.Filename)
+	sw := obj.NewWriter(ctx)
 	if _, err = io.Copy(sw, f); err != nil {
-		msg := fmt.Sprintf("Could not upload file: %v", err)
-		log.Println(msg)
+		log.Fatalf("Object(fh.Filename).NewWriter: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	if err := sw.Close(); err != nil {
-		msg := fmt.Sprintf("Could not upload file: %v", err)
-		log.Println(msg)
+		log.Fatalf("sw.Close: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	attrs, err := bucketHandle.Attrs(ctx)
 	if err != nil {
-		log.Println(err)
+		log.Fatalf("bucketHandle.Attrs: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -155,13 +150,17 @@ func PostImage(w http.ResponseWriter, r *http.Request) {
 	message := fh.Header.Get("message")
 	post := Post{
 		UserID:  token.UID,
-		Image:   u,
+		Image:   u.EscapedPath(),
 		Message: message,
 	}
 
-	ref, _, err := fireStoreClient.Collection("posts").Add(ctx, post)
+	_, _, err = fireStoreClient.Collection("posts").Add(ctx, post)
 	if err != nil {
-		log.Println(err)
+		log.Fatalf(`Collection("posts").Add: %v`, err)
+		err = bucketHandle.Object(fh.Filename).Delete(ctx)
+		if err != nil {
+			log.Fatalf("bucketHandle.Object(fh.Filename).Delete: %v", err)
+		}
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

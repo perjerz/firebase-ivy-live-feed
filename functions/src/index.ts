@@ -3,18 +3,17 @@ import * as admin from 'firebase-admin';
 
 admin.initializeApp(functions.config().firebase);
 
-// Start writing Firebase Functions
-// https://firebase.google.com/docs/functions/typescript
-
-export const helloWorld = functions.https.onRequest((request, response) => {
- response.send("Hello from Firebase!");
-});
-
 export const createUserDocument = functions.auth.user().onCreate((request) => {
-  const { displayName, photoURL } = request;
-  admin.firestore().collection('users').doc(request.uid).set({
+  const { displayName, photoURL, uid } = request;
+  admin.firestore().collection('users').doc(uid).set({
     displayName,
     photoURL,
+  })
+  .then(() => {
+    console.log(`Succeeded to create uid ${uid} Firestore document`);
+  })
+  .catch(err => {
+    console.error(`Failed to create uid ${uid} Firestore document`);
   });
 });
 
