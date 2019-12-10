@@ -20,7 +20,7 @@ export class AppService {
 
     return this.auth.idToken.pipe(
       exhaustMap(token =>
-        this.http.post('http://localhost:8080/post', formData, {
+        this.http.post('/Post', formData, {
           headers: {
             Authorization: `Bearer ${token}`
           }

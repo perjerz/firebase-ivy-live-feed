@@ -12,10 +12,10 @@ const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4 * Mega * Bytes
 const IMAGE_LOAD_TIMEOUT = 100;
 
 interface Post {
-  postUserId: string;
-  imageUrl: string;
+  postUserID: string;
+  imageURL: string;
   message: string;
-  likeUserIds: string[];
+  likeUserIDs: string[];
 }
 
 @Component({

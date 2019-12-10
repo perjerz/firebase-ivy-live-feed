@@ -1,4 +1,6 @@
-import { HttpClientModule } from '@angular/common/http';
+
+import { ApiInterceptorService } from './api-interceptor.service';
+import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { AngularFireModule } from '@angular/fire';
 import { AngularFireAuthModule } from '@angular/fire/auth';
 import { AngularFirestoreModule } from '@angular/fire/firestore';
@@ -14,7 +16,7 @@ import {
   MatDialogModule,
   MatSnackBarModule,
   MatBadgeModule,
-  MatMenuModule,
+  MatMenuModule
 } from '@angular/material';
 import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
@@ -23,9 +25,7 @@ import { AppComponent } from './app.component';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 @NgModule({
-  declarations: [
-    AppComponent
-  ],
+  declarations: [AppComponent],
   imports: [
     BrowserModule,
     NoopAnimationsModule,
@@ -45,7 +45,15 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
     AngularFireStorageModule,
     HttpClientModule
   ],
-  providers: [],
+  providers: environment.production
+    ? [
+      {
+        provide: HTTP_INTERCEPTORS,
+        useClass: ApiInterceptorService,
+        multi: true
+      }
+    ]
+    : [],
   bootstrap: [AppComponent]
 })
-export class AppModule { }
+export class AppModule {}

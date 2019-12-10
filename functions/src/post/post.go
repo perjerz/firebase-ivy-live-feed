@@ -5,10 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
-	"os"
 	"strings"
 
 	"cloud.google.com/go/firestore"
@@ -18,11 +18,11 @@ import (
 )
 
 // Post is the post document store in FireStore
-type Post struct {
-	UserID      string   `json:"postUserId"`
-	Image       string   `json:"imageUrl"`
-	Message     string   `json:"message"`
-	LikeUserIDs []string `json:"likeUserIds"`
+type post struct {
+	postUserID  string   `json:"postUserID"`
+	imageURL    string   `json:"imageURL"`
+	message     string   `json:"message"`
+	likeUserIDs []string `json:"likeUserIDs"`
 }
 
 var (
@@ -34,8 +34,12 @@ var (
 
 func init() {
 	ctx = context.Background()
-
-	app, err := firebase.NewApp(ctx, nil)
+	config := &firebase.Config{
+		ProjectID:     "fir-ivy-live-feed",
+		StorageBucket: "fir-ivy-live-feed.appspot.com",
+		DatabaseURL:   "https://fir-ivy-live-feed.firebaseio.com",
+	}
+	app, err := firebase.NewApp(ctx, config)
 	if err != nil {
 		log.Fatalf("firebase.NewApp: %v", err)
 		return
@@ -81,10 +85,18 @@ func parseToken(r *http.Request) (*auth.Token, error) {
 	return token, err
 }
 
-// Image is triggered by HTTP Request
-func Image(w http.ResponseWriter, r *http.Request) {
+// Post is triggered by HTTP Request
+func Post(w http.ResponseWriter, r *http.Request) {
 	defer fireStoreClient.Close()
-	if r.Method != "POST" {
+
+	if r.Method == http.MethodOptions {
+		w.Header().Set("Access-Control-Allow-Origin", "https://fir-ivy-live-feed.web.app")
+		w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
+		w.Header().Set("Access-Control-Allow-Methods", "POST")
+		w.Header().Set("Access-Control-Max-Age", "7200")
+		return
+	}
+	if r.Method != http.MethodPost {
 		log.Fatalf("Wrong Method: %v", r.Method)
 		http.Error(w, "Accept POST only", http.StatusMethodNotAllowed)
 		return
@@ -97,63 +109,39 @@ func Image(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = r.ParseMultipartForm(4 << 20)
+	r.Body = http.MaxBytesReader(w, r.Body, 4<<20)
+	err = r.ParseMultipartForm(5 << 20)
+
 	if err != nil {
-		log.Fatalf("r.ParseMultipartForm: %v", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	defer func() {
-		if err := r.MultipartForm.RemoveAll(); err != nil {
-			http.Error(w, "Error cleaning up form files", http.StatusInternalServerError)
-			log.Printf("Error cleaning up form files: %v", err)
-		}
-	}()
+	f, fh, err := r.FormFile("image")
 
-	// Image file
-	for _, h := range r.MultipartForm.File["image"] {
-		file, err := h.Open()
-		if err != nil {
-			http.Error(w, "r.MultipartForm.File", http.StatusBadRequest)
-			return
-		}
-		tmpfile, err := os.Create("./" + h.Filename)
-		if err != nil {
-			http.Error(w, "os.Create", http.StatusInternalServerError)
-			return
-		}
-		tmpfile.Close()
-		io.Copy(tmpfile, file)
-	}
-
-	f, fh, err := r.FormFile("message")
 	defer f.Close()
+
 	if err != nil {
-		log.Fatalf("r.FormFile: %v", err.Error())
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Fatalf("File error: %v", err.Error())
+		http.Error(w, "", http.StatusBadRequest)
 		return
 	}
-	//metadata, err := ioutil.ReadAll(f)
-	//if err != nil {
-	//  log.Fatalf("ioutil.ReadAll: %v", err.Error())
-	//  http.Error(w, err.Error(), http.StatusInternalServerError)
-	//  return
-	//}
 
-	//
-	//buffer := make([]byte, 512)
-	//if _, err = f.Read(buffer); err != nil {
-	//	log.Fatalf("f.Read: %v", err)
-	//	http.Error(w, err.Error(), http.StatusBadRequest)
-	//	return
-	//}
-	//
-	//if http.DetectContentType(buffer) == "application/octet-stream" {
-	//	log.Fatalf("UID %v posts wrong image", token.UID)
-	//	http.Error(w, "Image is not valid.", http.StatusBadRequest)
-	//	return
-	//}
+	buffer, err := ioutil.ReadAll(f)
+
+	if err != nil {
+		log.Fatalf("File error: %v", err.Error())
+		http.Error(w, "", http.StatusInternalServerError)
+		return
+	}
+
+	fileType := http.DetectContentType(buffer)
+
+	if !strings.HasPrefix(fileType, "image/") {
+		log.Fatalf("UID posts wrong image")
+		http.Error(w, "Image is not valid.", http.StatusBadRequest)
+		return
+	}
 
 	bucketHandle, err := storageClient.DefaultBucket()
 	if err != nil {
@@ -182,14 +170,20 @@ func Image(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	u, _ := url.Parse("/" + attrs.Name + "/" + sw.Attrs().Name)
+	u, err := url.Parse("/" + attrs.Name + "/" + sw.Attrs().Name)
+
+	if err != nil {
+		log.Fatalf("url.Parse: %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	// TODO: sanitize message
-	message := fh.Header.Get("message")
-	post := Post{
-		UserID:  token.UID,
-		Image:   u.EscapedPath(),
-		Message: message,
+	message := r.FormValue("message")
+	post := post{
+		postUserID: token.UID,
+		imageURL:   "https:/" + u.EscapedPath(),
+		message:    message,
 	}
 
 	_, _, err = fireStoreClient.Collection("posts").Add(ctx, post)
@@ -204,6 +198,6 @@ func Image(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
+	w.Header().Set("Access-Control-Allow-Origin", "https://fir-ivy-live-feed.web.app")
 	fmt.Fprintf(w, "Post successfully! URL: %s", u.EscapedPath())
 }
