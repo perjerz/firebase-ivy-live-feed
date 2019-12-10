@@ -149,7 +149,7 @@ func Post(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	obj := bucketHandle.Object(fh.Filename)
+	obj := bucketHandle.Object("posts/" + fh.Filename)
 	sw := obj.NewWriter(ctx)
 	if _, err = io.Copy(sw, f); err != nil {
 		log.Fatalf("Object(fh.Filename).NewWriter: %v", err)
@@ -181,9 +181,10 @@ func Post(w http.ResponseWriter, r *http.Request) {
 	// TODO: sanitize message
 	message := r.FormValue("message")
 	post := post{
-		UserID:  token.UID,
-		Image:   "https:/" + u.EscapedPath(),
-		Message: message,
+		UserID:      token.UID,
+		Image:       sw.Attrs().Name,
+		Message:     message,
+		LikeUserIDs: []string{},
 	}
 
 	_, _, err = fireStoreClient.Collection("posts").Add(ctx, post)

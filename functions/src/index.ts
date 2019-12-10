@@ -6,18 +6,11 @@ const runtimeOpts = {
   memory: '128MB' as '128MB'
 };
 
-const serviceAccount = require ('../key.json');
-
-const options: admin.AppOptions = {
-  credential: admin.credential.cert(serviceAccount),
-  databaseURL: 'https://fir-ivy-live-feed.firebaseio.com',
-}
-
-admin.initializeApp(options);
+admin.initializeApp();
 
 export const createUserDocument = functions.region('asia-east2').runWith(runtimeOpts).auth.user().onCreate((request) => {
   const { displayName, photoURL, uid } = request;
-  admin.firestore().collection('users').doc(uid).set({
+  return admin.firestore().collection('users').doc(uid).set({
     displayName,
     photoURL,
   })
@@ -32,7 +25,7 @@ export const createUserDocument = functions.region('asia-east2').runWith(runtime
 export const deleteUserDocument = functions.region('asia-east2').runWith(runtimeOpts).auth.user().onDelete((request) => {
   const userDoc = admin.firestore().collection('users').doc(request.uid);
   if (userDoc) {
-    userDoc.delete()
+    return userDoc.delete()
     .then(() => {
       console.log(`Succeeded to delete ${request.uid}`);
     })
@@ -40,6 +33,7 @@ export const deleteUserDocument = functions.region('asia-east2').runWith(runtime
       console.error(`Failed to delete ${request.uid}`);
     });
   }
+  return Promise.reject();
 });
 
 export const deleteUserAuth = functions.region('asia-east2').runWith(runtimeOpts).firestore.document('users/{uid}').onDelete(async (snapshot) => {
@@ -51,11 +45,14 @@ export const deleteUserAuth = functions.region('asia-east2').runWith(runtimeOpts
       try {
         await admin.auth().deleteUser(user.uid);
         console.log(`Succeeded to delete ${uid}`);
+        return Promise.resolve();
       }
       catch (err) {
         console.error(`Failed to delete ${uid}`);
+        return Promise.reject();
       }
     }
+    return Promise.reject();
   }
 });
 

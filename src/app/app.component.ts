@@ -1,27 +1,52 @@
-import { Component, OnInit } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  ChangeDetectionStrategy,
+  ChangeDetectorRef
+} from '@angular/core';
 import { AngularFireAuth } from '@angular/fire/auth';
-import { AngularFirestore } from '@angular/fire/firestore';
-import { EMPTY, fromEvent, Observable, of, race, throwError, timer } from 'rxjs';
+import {
+  AngularFirestore,
+  AngularFirestoreCollection
+} from '@angular/fire/firestore';
+import {
+  EMPTY,
+  fromEvent,
+  Observable,
+  of,
+  race,
+  throwError,
+  timer
+} from 'rxjs';
 import { map, switchMap, take, tap } from 'rxjs/operators';
 import { AppService } from './app.service';
 import { FeedDialogComponent } from './feed-dialog/feed-dialog.component';
 import { MatDialog, MatSnackBar } from '@angular/material';
 import * as firebase from 'firebase';
+import { AngularFireStorage } from '@angular/fire/storage';
+import { post } from 'selenium-webdriver/http';
 
 const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4 * Mega * Bytes
 const IMAGE_LOAD_TIMEOUT = 100;
-
+interface User {
+  displayName: string;
+  photoURL: string;
+}
 interface Post {
   UserID: string;
   Image: string;
+  image$?: Observable<string>;
+  user$?: Observable<User>;
   Message: string;
   LikeUserIDs: string[];
+  displayName: string;
 }
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
-  styleUrls: ['./app.component.scss']
+  styleUrls: ['./app.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AppComponent implements OnInit {
   posts$: Observable<Post[]>;
@@ -33,12 +58,28 @@ export class AppComponent implements OnInit {
     private matSnackbar: MatSnackBar,
     private afs: AngularFirestore,
     private auth: AngularFireAuth,
-    private appService: AppService,
-  ) { }
+    public storage: AngularFireStorage,
+    private appService: AppService
+  ) {}
 
   ngOnInit() {
+    const usersRef = this.afs.collection<User>('users');
+
     this.user$ = this.auth.user;
-    this.posts$ = this.afs.collection<Post>('posts').valueChanges();
+    this.posts$ = this.afs
+      .collection<Post>('posts')
+      .valueChanges()
+      .pipe(
+        map(posts =>
+          posts.map(p => ({
+            ...p,
+            image$: this.storage.ref(`posts/${p.Image}`).getDownloadURL(),
+            user$: usersRef.doc<User>(p.UserID).valueChanges()
+          }))
+        )
+      );
+
+    this.storage.ref('post');
   }
 
   trackByKey(index: number) {
@@ -48,12 +89,13 @@ export class AppComponent implements OnInit {
   openFeedDialog() {
     let uploadImage: File;
     const image$ = this.pickImage();
-    const message$ = (base64: string) => this.matDialog
-    .open<FeedDialogComponent, unknown, string>(FeedDialogComponent, {
-      maxWidth: '95vw',
-      data: base64
-    })
-    .afterClosed();
+    const message$ = (base64: string) =>
+      this.matDialog
+        .open<FeedDialogComponent, unknown, string>(FeedDialogComponent, {
+          maxWidth: '95vw',
+          data: base64
+        })
+        .afterClosed();
     image$
       .pipe(
         tap(file => {
@@ -75,11 +117,13 @@ export class AppComponent implements OnInit {
           this.matSnackbar.open('Posted successfully!', '', { duration: 1000 });
         },
         err => {
-          this.matSnackbar.open(err, '', { duration: 3000 });
+          this.matSnackbar.open(JSON.stringify(err), '', { duration: 3000 });
         },
         () => {
-          this.matSnackbar.open('What\'s wrong? Why didn\'t you post?', '', { duration: 2000});
-        },
+          this.matSnackbar.open('What is wrong? Why did not you post?', '', {
+            duration: 2000
+          });
+        }
       );
   }
 
@@ -95,7 +139,6 @@ export class AppComponent implements OnInit {
         this.matSnackbar.open(err.toString());
       });
   }
-
 
   signOut() {
     this.auth.auth.signOut();
