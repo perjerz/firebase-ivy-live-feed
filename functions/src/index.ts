@@ -1,9 +1,21 @@
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 
-admin.initializeApp(functions.config().firebase);
+const runtimeOpts = {
+  timeoutSeconds: 60,
+  memory: '128MB' as '128MB'
+};
 
-export const createUserDocument = functions.auth.user().onCreate((request) => {
+const serviceAccount = require ('../key.json');
+
+const options: admin.AppOptions = {
+  credential: admin.credential.cert(serviceAccount),
+  databaseURL: 'https://fir-ivy-live-feed.firebaseio.com',
+}
+
+admin.initializeApp(options);
+
+export const createUserDocument = functions.region('asia-east2').runWith(runtimeOpts).auth.user().onCreate((request) => {
   const { displayName, photoURL, uid } = request;
   admin.firestore().collection('users').doc(uid).set({
     displayName,
@@ -13,11 +25,11 @@ export const createUserDocument = functions.auth.user().onCreate((request) => {
     console.log(`Succeeded to create uid ${uid} Firestore document`);
   })
   .catch(err => {
-    console.error(`Failed to create uid ${uid} Firestore document`);
+    console.error(`Failed to create uid ${uid} Firestore document, Error ${err}`);
   });
 });
 
-export const deleteUserDocument = functions.auth.user().onDelete((request) => {
+export const deleteUserDocument = functions.region('asia-east2').runWith(runtimeOpts).auth.user().onDelete((request) => {
   const userDoc = admin.firestore().collection('users').doc(request.uid);
   if (userDoc) {
     userDoc.delete()
@@ -30,7 +42,7 @@ export const deleteUserDocument = functions.auth.user().onDelete((request) => {
   }
 });
 
-export const deleteUserAuth = functions.firestore.document('users/{uid}').onDelete(async (snapshot) => {
+export const deleteUserAuth = functions.region('asia-east2').runWith(runtimeOpts).firestore.document('users/{uid}').onDelete(async (snapshot) => {
   const data = snapshot.data();
   if (data) {
     const { uid } = data;
@@ -53,7 +65,7 @@ export const deleteUserAuth = functions.firestore.document('users/{uid}').onDele
 //
 // import * as Busboy from 'busboy';
 
-// export const updatePostCollection = functions.https.onRequest( async(req, res) => {
+// export const updatePostCollection = functions.region('asia-east2').https.onRequest( async(req, res) => {
 //
 //   if (req.method !== 'POST') {
 //     // Return a "method not allowed" error

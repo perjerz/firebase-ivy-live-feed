@@ -19,10 +19,10 @@ import (
 
 // Post is the post document store in FireStore
 type post struct {
-	postUserID  string   `json:"postUserID"`
-	imageURL    string   `json:"imageURL"`
-	message     string   `json:"message"`
-	likeUserIDs []string `json:"likeUserIDs"`
+	UserID      string   `json:"postUserId"`
+	Image       string   `json:"imageUrl"`
+	Message     string   `json:"message"`
+	LikeUserIDs []string `json:"likeUserIds"`
 }
 
 var (
@@ -181,9 +181,9 @@ func Post(w http.ResponseWriter, r *http.Request) {
 	// TODO: sanitize message
 	message := r.FormValue("message")
 	post := post{
-		postUserID: token.UID,
-		imageURL:   "https:/" + u.EscapedPath(),
-		message:    message,
+		UserID:  token.UID,
+		Image:   "https:/" + u.EscapedPath(),
+		Message: message,
 	}
 
 	_, _, err = fireStoreClient.Collection("posts").Add(ctx, post)
