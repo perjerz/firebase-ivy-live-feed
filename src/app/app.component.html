@@ -18,7 +18,7 @@
       <div mat-card-avatar class="header-image"></div>
     <mat-card-title>{{post.postUserId}}</mat-card-title>
     </mat-card-header>
-    <img style="margin-top: 1em;" mat-card-image [src]="post.imageUrl" alt="post image">
+    <img loading="lazy" style="margin-top: 1em;" mat-card-image [src]="post.imageUrl" alt="post image">
     <mat-card-content>
       <p>{{post.message}}</p>
     </mat-card-content>

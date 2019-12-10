@@ -1,6 +1,8 @@
+import { HttpClientModule } from '@angular/common/http';
 import { AngularFireModule } from '@angular/fire';
 import { AngularFireAuthModule } from '@angular/fire/auth';
 import { AngularFirestoreModule } from '@angular/fire/firestore';
+import { AngularFireStorageModule } from '@angular/fire/storage';
 import { AngularFireFunctionsModule } from '@angular/fire/functions';
 import { environment } from '../environments/environment';
 import { FeedDialogModule } from './feed-dialog/feed-dialog.module';
@@ -40,6 +42,8 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
     AngularFireAuthModule,
     AngularFirestoreModule,
     AngularFireFunctionsModule,
+    AngularFireStorageModule,
+    HttpClientModule
   ],
   providers: [],
   bootstrap: [AppComponent]

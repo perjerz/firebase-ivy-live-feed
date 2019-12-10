@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { AngularFireAuth } from '@angular/fire/auth';
 import { AngularFirestore } from '@angular/fire/firestore';
 import { EMPTY, fromEvent, Observable, of, race, throwError, timer } from 'rxjs';
-import { map, switchMap, take, tap, withLatestFrom } from 'rxjs/operators';
+import { map, switchMap, take, tap } from 'rxjs/operators';
 import { AppService } from './app.service';
 import { FeedDialogComponent } from './feed-dialog/feed-dialog.component';
 import { MatDialog, MatSnackBar } from '@angular/material';
@@ -68,8 +68,7 @@ export class AppComponent implements OnInit {
           }
           return of(message);
         }),
-        withLatestFrom(this.user$),
-        switchMap(([message, user]) => this.appService.post(user.uid, uploadImage, message))
+        switchMap(message => this.appService.post(uploadImage, message))
       )
       .subscribe(
         () => {
@@ -89,7 +88,7 @@ export class AppComponent implements OnInit {
     authProvider.addScope('email');
     this.auth.auth
       .signInWithPopup(authProvider)
-      .then(user => {
+      .then(() => {
         this.matSnackbar.open('Sign in successfully.');
       })
       .catch(err => {
