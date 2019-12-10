@@ -1,74 +1,67 @@
 package main
 
 import (
-  "fmt"
-  "io"
-  "io/ioutil"
-  "log"
-  "net/http"
-  "os"
+	"io/ioutil"
+	"log"
+	"net/http"
+	"strings"
 )
 
 func main() {
-  mux := http.NewServeMux()
+	mux := http.NewServeMux()
 
-  mux.HandleFunc("/upload", func(w http.ResponseWriter, r *http.Request) {
-    if r.Method != "POST"{
-      log.Fatalf("Wrong Method: %v", r.Method)
-      http.Error(w, "Accept POST only", http.StatusMethodNotAllowed)
-      return
-    }
-    err := r.ParseMultipartForm(4 << 20)
-    if err != nil {
-      log.Fatalf("r.ParseMultipartForm: %v", err)
-      http.Error(w, err.Error(), http.StatusBadRequest)
-      return
-    }
+	mux.HandleFunc("/post", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodOptions {
+			w.Header().Set("Access-Control-Allow-Origin", "https://localhost:4200")
+			w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
+			w.Header().Set("Access-Control-Allow-Methods", "POST")
+			w.Header().Set("Access-Control-Max-Age", "7200")
+			return
+		}
+		if r.Method != http.MethodPost {
+			log.Fatalf("Wrong Method: %v", r.Method)
+			http.Error(w, "Accept POST only", http.StatusMethodNotAllowed)
+			return
+		}
 
-    defer func() {
-      if err := r.MultipartForm.RemoveAll(); err != nil {
-        http.Error(w, "Error cleaning up form files", http.StatusInternalServerError)
-        log.Printf("Error cleaning up form files: %v", err)
-      }
-    }()
+		r.Body = http.MaxBytesReader(w, r.Body, 4<<20)
+		err := r.ParseMultipartForm(5 << 20)
 
-    var tmpfile *os.File
-    for _, h := range r.MultipartForm.File["image"] {
-      file, err := h.Open()
-      if err != nil {
-        http.Error(w, "r.MultipartForm.File", http.StatusBadRequest)
-        return
-      }
-      tmpfile, err = os.Create("./" + h.Filename)
-      if err != nil {
-        http.Error(w, "os.Create", http.StatusInternalServerError)
-        return
-      }
-      tmpfile.Close()
-      io.Copy(tmpfile, file)
-    }
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 
-    f, _, err := r.FormFile("message")
-    if err != nil {
-      message := fmt.Sprint("Error %v", err.Error())
-      http.Error(w, message, http.StatusInternalServerError)
-    }
-    message, err := ioutil.ReadAll(f)
-    log.Printf("message %v", message)
+		f, _, err := r.FormFile("image")
 
-    buffer := make([]byte, 512)
-    if _, err = tmpfile.Read(buffer); err != nil {
-    	log.Fatalf("f.Read: %v", err)
-    	http.Error(w, err.Error(), http.StatusBadRequest)
-    	return
-    }
-    if http.DetectContentType(buffer) == "application/octet-stream" {
-      log.Fatalf("UID posts wrong image")
-      http.Error(w, "Image is not valid.", http.StatusBadRequest)
-      return
-    }
+		if err != nil {
+			log.Fatalf("File error: %v", err.Error())
+			http.Error(w, "", http.StatusBadRequest)
+			return
+		}
 
-  })
+		buffer, err := ioutil.ReadAll(f)
 
-  http.ListenAndServe(":8080", mux)
+		if err != nil {
+			log.Fatalf("File error: %v", err.Error())
+			http.Error(w, "", http.StatusInternalServerError)
+			return
+		}
+
+		fileType := http.DetectContentType(buffer)
+
+		if !strings.HasPrefix(fileType, "image/") {
+			log.Fatalf("UID posts wrong image")
+			http.Error(w, "Image is not valid.", http.StatusBadRequest)
+			return
+		}
+
+		message := r.FormValue("message")
+
+		log.Printf("message %v", message)
+		w.Header().Set("Access-Control-Allow-Origin", "https://localhost:4200")
+
+	})
+
+	http.ListenAndServe(":8080", mux)
 }
