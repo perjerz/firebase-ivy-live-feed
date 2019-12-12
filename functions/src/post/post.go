@@ -127,7 +127,7 @@ func Post(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "", http.StatusBadRequest)
 		return
 	}
-	log.Printf("file Size: %v", fh.Size)
+
 	buffer, err := ioutil.ReadAll(f)
 
 	if err != nil {
@@ -141,6 +141,12 @@ func Post(w http.ResponseWriter, r *http.Request) {
 	if !strings.HasPrefix(fileType, "image/") {
 		log.Fatalf("UID posts wrong image")
 		http.Error(w, "Image is not valid.", http.StatusBadRequest)
+		return
+	}
+
+	if _, err := f.Seek(0, io.SeekStart); err != nil {
+		log.Fatalf("f.Seek: %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
