@@ -19,7 +19,7 @@
         <div mat-card-avatar [style.backgroundImage]="'url('+user.photoURL+')'" class="header-image"></div>
       <mat-card-title>{{user.displayName}}</mat-card-title>
       </mat-card-header>
-      <img loading="lazy" style="margin-top: 1em;" mat-card-image [src]="post.image$ | async" alt="post image">
+      <img *ngIf="post.image$ | async as url" loading="lazy" style="margin-top: 1em;" mat-card-image [src]="url" alt="post image">
       <mat-card-content>
         <p>{{post.Message}}</p>
       </mat-card-content>

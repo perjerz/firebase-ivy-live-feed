@@ -73,7 +73,7 @@ export class AppComponent implements OnInit {
         map(posts =>
           posts.map(p => ({
             ...p,
-            image$: this.storage.ref(`posts/${p.Image}`).getDownloadURL(),
+            image$: this.storage.ref(p.Image).getDownloadURL(),
             user$: usersRef.doc<User>(p.UserID).valueChanges()
           }))
         )

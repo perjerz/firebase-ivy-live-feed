@@ -1,6 +1,6 @@
 {
   "/Post": {
-    "target": "https://asia-east2-fir-ivy-live-feed.cloudfunctions.net/post",
+    "target": "https://asia-east2-fir-ivy-live-feed.cloudfunctions.net/Post",
     "secure": false,
     "logLevel": "debug",
     "changeOrigin": true

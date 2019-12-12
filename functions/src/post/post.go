@@ -26,14 +26,13 @@ type post struct {
 }
 
 var (
-	ctx             context.Context
 	fireStoreClient *firestore.Client
 	storageClient   *storage.Client
 	authClient      *auth.Client
 )
 
 func init() {
-	ctx = context.Background()
+	ctx := context.Background()
 	config := &firebase.Config{
 		ProjectID:     "fir-ivy-live-feed",
 		StorageBucket: "fir-ivy-live-feed.appspot.com",
@@ -66,6 +65,7 @@ func init() {
 }
 
 func parseToken(r *http.Request) (*auth.Token, error) {
+	ctx := context.Background()
 	auth := r.Header.Get("Authorization")
 	cookie, _ := r.Cookie("__session")
 	if !strings.HasPrefix(auth, "Bearer ") && cookie == nil {
@@ -87,6 +87,7 @@ func parseToken(r *http.Request) (*auth.Token, error) {
 
 // Post is triggered by HTTP Request
 func Post(w http.ResponseWriter, r *http.Request) {
+	ctx := context.Background()
 	defer fireStoreClient.Close()
 
 	if r.Method == http.MethodOptions {
@@ -126,7 +127,7 @@ func Post(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "", http.StatusBadRequest)
 		return
 	}
-
+	log.Printf("file Size: %v", fh.Size)
 	buffer, err := ioutil.ReadAll(f)
 
 	if err != nil {
@@ -143,14 +144,17 @@ func Post(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	bucketHandle, err := storageClient.DefaultBucket()
+	bh, err := storageClient.DefaultBucket()
 	if err != nil {
 		log.Fatalf("storageClient.DefaultBucket: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	obj := bucketHandle.Object("posts/" + fh.Filename)
+
+	obj := bh.Object("posts/" + fh.Filename)
+
 	sw := obj.NewWriter(ctx)
+
 	if _, err = io.Copy(sw, f); err != nil {
 		log.Fatalf("Object(fh.Filename).NewWriter: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -163,12 +167,14 @@ func Post(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	attrs, err := bucketHandle.Attrs(ctx)
+	attrs, err := bh.Attrs(ctx)
 	if err != nil {
-		log.Fatalf("bucketHandle.Attrs: %v", err)
+		log.Fatalf("bh.Attrs: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	log.Printf("Attrs: %v %v", sw.Attrs().ContentType, sw.Attrs().Size)
 
 	u, err := url.Parse("/" + attrs.Name + "/" + sw.Attrs().Name)
 
@@ -190,7 +196,7 @@ func Post(w http.ResponseWriter, r *http.Request) {
 	_, _, err = fireStoreClient.Collection("posts").Add(ctx, post)
 	if err != nil {
 		log.Fatalf(`Collection("posts").Add: %v`, err)
-		err2 := bucketHandle.Object(fh.Filename).Delete(ctx)
+		err2 := bh.Object(fh.Filename).Delete(ctx)
 		if err2 != nil {
 			log.Fatalf("bucketHandle.Object(fh.Filename).Delete: %v", err)
 			http.Error(w, err2.Error(), http.StatusInternalServerError)
