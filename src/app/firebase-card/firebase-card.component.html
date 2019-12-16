@@ -9,7 +9,7 @@
       <p>{{post.Message}}</p>
     </mat-card-content>
     <mat-card-actions>
-      <button mat-icon-button aria-label="icon-button with a heart icon" (click)="like.emit(post.PostID)">
+      <button mat-icon-button aria-label="icon-button with a heart icon" (click)="likePost()">
         <mat-icon [matBadge]="post?.LikeUserIDs?.length"
                   matBadgeColor="primary" matBadgePosition="above after" style="color: #c62828;"
         >{{!myLike ? 'favorite_border' : 'favorite'}}</mat-icon>
