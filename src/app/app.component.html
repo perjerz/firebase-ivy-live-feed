@@ -1,40 +1,12 @@
-<mat-toolbar color="primary">
-  <mat-toolbar-row>
-    <span>Firebase Dev Day</span>
-    <span class="spacer"></span>
-    <img *ngIf="user$ | async as user; else login" [matMenuTriggerFor]="menu" style="height: 50px; border-radius: 50%; margin-right: 0.5em" alt="user profile" [src]="user.photoURL" />
-    <mat-menu #menu="matMenu">
-      <button mat-menu-item (click)="signOut()">Sign out</button>
-    </mat-menu>
-    <ng-template #login>
-      <button mat-button type="button" aria-label="sign in button" color="accent" (click)="signIn()">Sign in</button>
-    </ng-template>
-    <img mat-button style="height: 50px;" alt="Firebase Logo" src="./assets/logo-logomark.svg" />
-  </mat-toolbar-row>
-</mat-toolbar>
+<app-firebase-toolbar [user]="user$ | async"></app-firebase-toolbar>
 <div style="display: flex; flex-wrap: wrap;">
-  <mat-card style="max-width: 400px; margin: 1em;" *ngFor="let post of posts$ | async; index as i; trackBy: trackByKey">
-    <ng-container *ngIf="post.user$ | async as user">
-      <mat-card-header>
-        <div mat-card-avatar [style.backgroundImage]="'url('+user.photoURL+')'" class="header-image"></div>
-      <mat-card-title>{{user.displayName}}</mat-card-title>
-      </mat-card-header>
-      <img *ngIf="post.image$ | async as url" loading="lazy" style="margin-top: 1em;" mat-card-image [src]="url" alt="post image">
-      <mat-card-content>
-        <p>{{post.Message}}</p>
-      </mat-card-content>
-      <mat-card-actions>
-        <button mat-icon-button aria-label="icon-button with a heart icon" (click)="like()">
-          <mat-icon [matBadge]="post?.LikeUserIDs?.length"
-                    matBadgeColor="primary" matBadgePosition="above after" style="color: #c62828;"
-          >{{!myLike ? 'favorite_border' : 'favorite'}}</mat-icon>
-        </button>
-        <button mat-icon-button aria-label="icon-button with a share icon" (click)="share()">
-          <mat-icon style="color: #2962ff;" aria-hidden="false" aria-label="share icon">share</mat-icon>
-        </button>
-      </mat-card-actions>
-  </ng-container>
-  </mat-card>
+  <app-firebase-card
+    style="max-width: 400px; margin: 1em;"
+    *ngFor="let post of posts$ | async; index as i; trackBy: trackByKey"
+    [post]="post"
+    (like)="like($event)"
+  >
+  </app-firebase-card>
 </div>
 <button *ngIf="user$ | async" mat-mini-fab aria-label="icon-button with a add icon"
         color="primary" class="add-btn" type="button" (click)="openFeedDialog()">

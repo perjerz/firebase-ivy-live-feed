@@ -1,3 +1,4 @@
+import { Post, User } from './app.interface';
 import {
   Component,
   OnInit,
@@ -7,7 +8,6 @@ import {
 import { AngularFireAuth } from '@angular/fire/auth';
 import {
   AngularFirestore,
-  AngularFirestoreCollection
 } from '@angular/fire/firestore';
 import {
   EMPTY,
@@ -27,19 +27,6 @@ import { AngularFireStorage } from '@angular/fire/storage';
 
 const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4 * Mega * Bytes
 const IMAGE_LOAD_TIMEOUT = 100;
-interface User {
-  displayName: string;
-  photoURL: string;
-}
-interface Post {
-  UserID: string;
-  Image: string;
-  image$?: Observable<string>;
-  user$?: Observable<User>;
-  Message: string;
-  LikeUserIDs: string[];
-  displayName: string;
-}
 
 @Component({
   selector: 'app-root',
@@ -126,30 +113,9 @@ export class AppComponent implements OnInit {
       );
   }
 
-  signIn() {
-    const authProvider = new firebase.auth.FacebookAuthProvider();
-    authProvider.addScope('email');
-    this.auth.auth
-      .signInWithPopup(authProvider)
-      .then(() => {
-        this.matSnackbar.open('Sign in successfully.');
-      })
-      .catch(err => {
-        this.matSnackbar.open(err.toString());
-      });
-  }
 
-  signOut() {
-    this.auth.auth.signOut();
-  }
-
-  like() {
-    this.myLike = !this.myLike;
+  like(postID: string) {
     // TODO: Optimistic update
-  }
-
-  share() {
-    // TODO: Web Share API
   }
 
   private pickImage() {

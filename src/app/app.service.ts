@@ -13,6 +13,7 @@ export class AppService {
     private http: HttpClient,
     private auth: AngularFireAuth
   ) {}
+
   post(image: File, message: string) {
     const formData = new FormData();
     formData.append('image', image);

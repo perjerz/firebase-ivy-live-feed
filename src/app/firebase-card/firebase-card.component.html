@@ -1,0 +1,22 @@
+<mat-card style="max-width: 400px; margin: 1em;">
+  <ng-container *ngIf="post.user$ | async as user">
+    <mat-card-header>
+      <div mat-card-avatar [style.backgroundImage]="'url('+user.photoURL+')'" class="header-image"></div>
+    <mat-card-title>{{user.displayName}}</mat-card-title>
+    </mat-card-header>
+    <img *ngIf="post.image$ | async as url" loading="lazy" style="margin-top: 1em;" mat-card-image [src]="url" alt="post image">
+    <mat-card-content>
+      <p>{{post.Message}}</p>
+    </mat-card-content>
+    <mat-card-actions>
+      <button mat-icon-button aria-label="icon-button with a heart icon" (click)="like.emit(post.PostID)">
+        <mat-icon [matBadge]="post?.LikeUserIDs?.length"
+                  matBadgeColor="primary" matBadgePosition="above after" style="color: #c62828;"
+        >{{!myLike ? 'favorite_border' : 'favorite'}}</mat-icon>
+      </button>
+      <button mat-icon-button aria-label="icon-button with a share icon" (click)="share()">
+        <mat-icon style="color: #2962ff;" aria-hidden="false" aria-label="share icon">share</mat-icon>
+      </button>
+    </mat-card-actions>
+  </ng-container>
+</mat-card>

@@ -1,0 +1,14 @@
+<mat-toolbar color="primary">
+  <mat-toolbar-row>
+    <span>Firebase Dev Day</span>
+    <span style="flex: 1 1 auto;"></span>
+    <img *ngIf="user; else login" [matMenuTriggerFor]="menu" style="height: 50px; border-radius: 50%; margin-right: 0.5em" alt="user profile" [src]="user.photoURL" />
+    <mat-menu #menu="matMenu">
+      <button mat-menu-item (click)="signOut()">Sign out</button>
+    </mat-menu>
+    <ng-template #login>
+      <button mat-button type="button" aria-label="sign in button" color="accent" (click)="signIn()">Sign in</button>
+    </ng-template>
+    <img mat-button style="height: 50px;" alt="Firebase Logo" src="./assets/logo-logomark.svg" />
+  </mat-toolbar-row>
+</mat-toolbar>

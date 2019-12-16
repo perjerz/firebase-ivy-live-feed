@@ -23,9 +23,11 @@ import { NgModule } from '@angular/core';
 
 import { AppComponent } from './app.component';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
+import { FirebaseCardComponent } from './firebase-card/firebase-card.component';
+import { FirebaseToolbarComponent } from './firebase-toolbar/firebase-toolbar.component';
 
 @NgModule({
-  declarations: [AppComponent],
+  declarations: [AppComponent, FirebaseCardComponent, FirebaseToolbarComponent],
   imports: [
     BrowserModule,
     NoopAnimationsModule,
