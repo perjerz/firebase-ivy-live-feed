@@ -24,7 +24,6 @@ import { FeedDialogComponent } from './feed-dialog/feed-dialog.component';
 import { MatDialog, MatSnackBar } from '@angular/material';
 import * as firebase from 'firebase';
 import { AngularFireStorage } from '@angular/fire/storage';
-import { post } from 'selenium-webdriver/http';
 
 const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4 * Mega * Bytes
 const IMAGE_LOAD_TIMEOUT = 100;
@@ -89,7 +88,7 @@ export class AppComponent implements OnInit {
   openFeedDialog() {
     let uploadImage: File;
     const image$ = this.pickImage();
-    const message$ = (base64: string) =>
+    const dialog$ = (base64: string) =>
       this.matDialog
         .open<FeedDialogComponent, unknown, string>(FeedDialogComponent, {
           maxWidth: '95vw',
@@ -103,18 +102,18 @@ export class AppComponent implements OnInit {
         }),
         switchMap(file => this.readFileToBase64(file)),
         switchMap(base64 => this.checkImageError(base64)),
-        switchMap(base64 => message$(base64)),
-        switchMap(message => {
-          if (message === undefined) {
+        switchMap(base64 => dialog$(base64)),
+        switchMap(dialog => {
+          if (dialog === undefined) {
             return EMPTY;
           }
-          return of(message);
+          return of(dialog);
         }),
         switchMap(message => this.appService.post(uploadImage, message))
       )
       .subscribe(
         () => {
-          this.matSnackbar.open('Posted successfully!', '', { duration: 1000 });
+          this.matSnackbar.open('Posted successfully!', '', { duration: 2000 });
         },
         err => {
           this.matSnackbar.open(JSON.stringify(err), '', { duration: 3000 });
