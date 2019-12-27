@@ -3,12 +3,9 @@ import {
   Component,
   OnInit,
   ChangeDetectionStrategy,
-  ChangeDetectorRef
 } from '@angular/core';
 import { AngularFireAuth } from '@angular/fire/auth';
-import {
-  AngularFirestore,
-} from '@angular/fire/firestore';
+import { AngularFirestore } from '@angular/fire/firestore';
 import {
   EMPTY,
   fromEvent,
@@ -54,49 +51,53 @@ export class AppComponent implements OnInit {
     this.user$ = this.auth.user;
     this.posts$ = this.afs
       .collection<Post>('posts')
-      .valueChanges()
+      .snapshotChanges()
       .pipe(
-        map(posts =>
-          posts.map(p => ({
-            ...p,
-            image$: this.storage.ref(p.Image).getDownloadURL(),
-            user$: usersRef.doc<User>(p.UserID).valueChanges()
-          }))
+        map(actions => {
+            return actions.map(a => {
+              const id = a.payload.doc.id;
+              const post = a.payload.doc.data();
+              return {
+                ...post,
+                id,
+                image$: this.storage.ref(post.Image).getDownloadURL(),
+                user$: usersRef.doc<User>(post.UserID).valueChanges()
+              };
+            });
+          }
         )
       );
 
     this.storage.ref('post');
   }
 
-  trackByKey(index: number) {
-    return index;
+  trackById(index: number, post: Post) {
+    return post.id;
   }
 
   openFeedDialog() {
-    let uploadImage: File;
     const image$ = this.pickImage();
-    const dialog$ = (base64: string) =>
+    const dialog$ = (url: string) =>
       this.matDialog
         .open<FeedDialogComponent, unknown, string>(FeedDialogComponent, {
           maxWidth: '95vw',
-          data: base64
+          data: url
         })
         .afterClosed();
     image$
       .pipe(
-        tap(file => {
-          uploadImage = file;
-        }),
-        switchMap(file => this.readFileToBase64(file)),
-        switchMap(base64 => this.checkImageError(base64)),
-        switchMap(base64 => dialog$(base64)),
-        switchMap(dialog => {
-          if (dialog === undefined) {
-            return EMPTY;
-          }
-          return of(dialog);
-        }),
-        switchMap(message => this.appService.post(uploadImage, message))
+        switchMap(file =>
+          this.checkImageError(file).pipe(
+            switchMap(url => dialog$(url)),
+            switchMap(message => {
+              if (message === undefined) {
+                return EMPTY;
+              }
+              return of(message);
+            }),
+            switchMap(message => this.appService.post(file, message))
+          )
+        )
       )
       .subscribe(
         () => {
@@ -113,7 +114,6 @@ export class AppComponent implements OnInit {
       );
   }
 
-
   like(postID: string) {
     // TODO: Optimistic update
   }
@@ -123,7 +123,9 @@ export class AppComponent implements OnInit {
     input.type = 'file';
     input.accept = 'image/jpeg, image/png';
     // TODO: test input click because it doesn't work in some browsers
-    input.click();
+    setTimeout(() => {
+      input.click();
+    }, 0);
     return fromEvent(input, 'change').pipe(
       switchMap(() => {
         const file = input.files[0];
@@ -135,24 +137,16 @@ export class AppComponent implements OnInit {
     );
   }
 
-  private readFileToBase64(file: File) {
-    const reader = new FileReader();
-    const readFile$ = (fileReader: FileReader) => {
-      return fromEvent(fileReader, 'load').pipe(take(1));
-    };
-    reader.readAsDataURL(file);
-    return readFile$(reader).pipe(map(() => reader.result as string));
-  }
-
-  private checkImageError(base64: string) {
+  private checkImageError(file: File) {
     const img: HTMLImageElement = document.createElement('img');
-    img.src = base64;
+    const src = URL.createObjectURL(file);
+    img.src = src;
     return race(
       fromEvent(img, 'error').pipe(
         take(1),
         switchMap(() => throwError('You image is failed to load.'))
       ),
-      timer(IMAGE_LOAD_TIMEOUT).pipe(map(() => base64))
+      timer(IMAGE_LOAD_TIMEOUT).pipe(map(() => src))
     );
   }
 }

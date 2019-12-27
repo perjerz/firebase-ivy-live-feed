@@ -6,7 +6,7 @@
     </mat-card-header>
     <img *ngIf="post.image$ | async as url" loading="lazy" style="margin-top: 1em;" mat-card-image [src]="url" alt="post image">
     <mat-card-content>
-      <p>{{post.Message}}</p>
+      <pre>{{post.Message}}</pre>
     </mat-card-content>
     <mat-card-actions>
       <button mat-icon-button aria-label="icon-button with a heart icon" (click)="likePost()">

@@ -1,5 +1,6 @@
 import { Component, OnInit, ViewEncapsulation, ChangeDetectionStrategy, Inject, ViewChild, ElementRef } from '@angular/core';
 import { MatDialogRef, MAT_DIALOG_DATA, MatSnackBar } from '@angular/material';
+import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-feed-dialog',
@@ -10,15 +11,18 @@ import { MatDialogRef, MAT_DIALOG_DATA, MatSnackBar } from '@angular/material';
 })
 export class FeedDialogComponent implements OnInit {
   @ViewChild('textArea', { static: true }) textArea: ElementRef<HTMLTextAreaElement>;
-
+  imgUrl: SafeUrl;
   constructor(
     @Inject(MAT_DIALOG_DATA) public data: string,
+    private sanitizer: DomSanitizer,
     private matDialogRef: MatDialogRef<FeedDialogComponent>,
     private matSnackbar: MatSnackBar
     ) {
   }
 
-  ngOnInit() { }
+  ngOnInit() {
+    this.imgUrl = this.sanitizer.bypassSecurityTrustUrl(this.data);
+  }
 
   post() {
     const { value: message } = this.textArea.nativeElement;

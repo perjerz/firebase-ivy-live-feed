@@ -5,6 +5,7 @@ export interface User {
   photoURL: string;
 }
 export interface Post {
+  id?: string;
   PostID: string;
   UserID: string;
   Image: string;
