@@ -6,11 +6,11 @@
     </mat-card-header>
     <img *ngIf="post.image$ | async as url" loading="lazy" style="margin-top: 1em;" mat-card-image [src]="url" alt="post image">
     <mat-card-content>
-      <pre>{{post.Message}}</pre>
+      <pre>{{post.message}}</pre>
     </mat-card-content>
     <mat-card-actions>
       <button mat-icon-button aria-label="icon-button with a heart icon" (click)="likePost()">
-        <mat-icon [matBadge]="post?.LikeUserIDs?.length"
+        <mat-icon [matBadge]="post?.likeUserIds?.length"
                   matBadgeColor="primary" matBadgePosition="above after" style="color: #c62828;"
         >{{!myLike ? 'favorite_border' : 'favorite'}}</mat-icon>
       </button>

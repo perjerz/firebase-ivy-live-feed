@@ -21,7 +21,7 @@ export class FirebaseCardComponent implements OnInit {
 
   likePost() {
     this.myLike = !this.myLike;
-    this.like.emit(this.post.PostID);
+    this.like.emit(this.post.id);
   }
 
   share() {

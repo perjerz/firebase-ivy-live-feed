@@ -60,8 +60,8 @@ export class AppComponent implements OnInit {
               return {
                 ...post,
                 id,
-                image$: this.storage.ref(post.Image).getDownloadURL(),
-                user$: usersRef.doc<User>(post.UserID).valueChanges()
+                image$: this.storage.ref(post.imageUrl).getDownloadURL(),
+                user$: usersRef.doc<User>(post.postUserId).valueChanges()
               };
             });
           }
@@ -104,7 +104,7 @@ export class AppComponent implements OnInit {
           this.matSnackbar.open('Posted successfully!', '', { duration: 2000 });
         },
         err => {
-          this.matSnackbar.open(JSON.stringify(err), '', { duration: 3000 });
+          this.matSnackbar.open(err.statusText, '', { duration: 3000 });
         },
         () => {
           this.matSnackbar.open('What is wrong? Why did not you post?', '', {
@@ -114,7 +114,7 @@ export class AppComponent implements OnInit {
       );
   }
 
-  like(postID: string) {
+  like(postId: string) {
     // TODO: Optimistic update
   }
 
@@ -125,7 +125,7 @@ export class AppComponent implements OnInit {
     // TODO: test input click because it doesn't work in some browsers
     setTimeout(() => {
       input.click();
-    }, 0);
+    }, 100);
     return fromEvent(input, 'change').pipe(
       switchMap(() => {
         const file = input.files[0];

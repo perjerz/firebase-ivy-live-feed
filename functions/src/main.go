@@ -1,11 +1,23 @@
 package main
 
 import (
+	"context"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"strings"
+
+	firebase "firebase.google.com/go"
+	"google.golang.org/api/option"
 )
+
+// Post is the post document store in FireStore
+type post struct {
+	UserID      string   `json:"postUserId" firestore:"postUserId"`
+	Image       string   `json:"imageUrl" firestore:"imageUrl"`
+	Message     string   `json:"message" firestore:"message"`
+	LikeUserIDs []string `json:"likeUserIds" firestore:"likeUserIds"`
+}
 
 func main() {
 	mux := http.NewServeMux()
@@ -61,6 +73,32 @@ func main() {
 		log.Printf("message %v", message)
 		w.Header().Set("Access-Control-Allow-Origin", "https://localhost:4200")
 
+		ctx := context.Background()
+		opt := option.WithCredentialsFile("./key.json")
+		app, err := firebase.NewApp(ctx, nil, opt)
+		if err != nil {
+			log.Fatalf("firebase.NewApp: %v", err)
+			return
+		}
+
+		firestoreClient, err := app.Firestore(ctx)
+		if err != nil {
+			log.Fatalf("app.Firestore: %v", err)
+			return
+		}
+		post := post{
+			UserID:      "userid",
+			Image:       "name.jpg",
+			Message:     "message",
+			LikeUserIDs: []string{},
+		}
+
+		_, _, err = firestoreClient.Collection("posts").Add(ctx, post)
+		if err != nil {
+			log.Print(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	})
 
 	http.ListenAndServe(":8080", mux)

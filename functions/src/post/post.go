@@ -19,20 +19,21 @@ import (
 
 // Post is the post document store in FireStore
 type post struct {
-	UserID      string   `json:"postUserId"`
-	Image       string   `json:"imageUrl"`
-	Message     string   `json:"message"`
-	LikeUserIDs []string `json:"likeUserIds"`
+	UserID      string   `json:"postUserId" firestore:"postUserId"`
+	Image       string   `json:"imageUrl" firestore:"imageUrl"`
+	Message     string   `json:"message" firestore:"message"`
+	LikeUserIDs []string `json:"likeUserIds" firestore:"likeUserIds"`
 }
 
 var (
-	fireStoreClient *firestore.Client
+	firestoreClient *firestore.Client
 	storageClient   *storage.Client
 	authClient      *auth.Client
+	ctx             context.Context
 )
 
 func init() {
-	ctx := context.Background()
+	ctx = context.Background()
 	config := &firebase.Config{
 		ProjectID:     "fir-ivy-live-feed",
 		StorageBucket: "fir-ivy-live-feed.appspot.com",
@@ -50,7 +51,7 @@ func init() {
 		return
 	}
 
-	fireStoreClient, err = app.Firestore(ctx)
+	firestoreClient, err = app.Firestore(ctx)
 	if err != nil {
 		log.Fatalf("app.Firestore: %v", err)
 		return
@@ -58,14 +59,13 @@ func init() {
 
 	authClient, err = app.Auth(ctx)
 	if err != nil {
-		fireStoreClient.Close()
+		firestoreClient.Close()
 		log.Fatalf("app.Auth: %v", err)
 		return
 	}
 }
 
 func parseToken(r *http.Request) (*auth.Token, error) {
-	ctx := context.Background()
 	auth := r.Header.Get("Authorization")
 	cookie, _ := r.Cookie("__session")
 	if !strings.HasPrefix(auth, "Bearer ") && cookie == nil {
@@ -87,8 +87,7 @@ func parseToken(r *http.Request) (*auth.Token, error) {
 
 // Post is triggered by HTTP Request
 func Post(w http.ResponseWriter, r *http.Request) {
-	ctx := context.Background()
-	defer fireStoreClient.Close()
+	defer firestoreClient.Close()
 
 	if r.Method == http.MethodOptions {
 		w.Header().Set("Access-Control-Allow-Origin", "https://fir-ivy-live-feed.web.app")
@@ -199,10 +198,10 @@ func Post(w http.ResponseWriter, r *http.Request) {
 		LikeUserIDs: []string{},
 	}
 
-	_, _, err = fireStoreClient.Collection("posts").Add(ctx, post)
+	_, _, err = firestoreClient.Collection("posts").Add(ctx, post)
 	if err != nil {
 		log.Fatalf(`Collection("posts").Add: %v`, err)
-		err2 := bh.Object(fh.Filename).Delete(ctx)
+		err2 := bh.Object("posts/" + fh.Filename).Delete(ctx)
 		if err2 != nil {
 			log.Fatalf("bucketHandle.Object(fh.Filename).Delete: %v", err)
 			http.Error(w, err2.Error(), http.StatusInternalServerError)

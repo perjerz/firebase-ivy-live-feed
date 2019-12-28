@@ -6,12 +6,11 @@ export interface User {
 }
 export interface Post {
   id?: string;
-  PostID: string;
-  UserID: string;
-  Image: string;
+  postUserId: string;
+  imageUrl: string;
   image$?: Observable<string>;
   user$?: Observable<User>;
-  Message: string;
-  LikeUserIDs: string[];
+  message: string;
+  likeUserIds: string[];
   displayName: string;
 }
