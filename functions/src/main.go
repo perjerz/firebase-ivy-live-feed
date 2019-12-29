@@ -1,10 +1,12 @@
 package main
 
 import (
+	"cloud.google.com/go/firestore"
 	"context"
 	"errors"
 	firebase "firebase.google.com/go"
 	"firebase.google.com/go/auth"
+	"firebase.google.com/go/storage"
 	"fmt"
 	"google.golang.org/api/option"
 	"io"
@@ -23,7 +25,48 @@ type post struct {
 	LikeUserIDs []string `json:"likeUserIds" firestore:"likeUserIds"`
 }
 
-func parseToken(c *auth.Client, ctx context.Context, r *http.Request) (*auth.Token, error) {
+var (
+	firestoreClient *firestore.Client
+	storageClient   *storage.Client
+	authClient      *auth.Client
+	ctx             context.Context
+)
+
+func init() {
+	ctx = context.Background()
+	opt := option.WithCredentialsFile("./key.json")
+	config := &firebase.Config{
+		ProjectID:     "fir-ivy-live-feed",
+		StorageBucket: "fir-ivy-live-feed.appspot.com",
+		DatabaseURL:   "https://fir-ivy-live-feed.firebaseio.com",
+	}
+	app, err := firebase.NewApp(ctx, config, opt)
+	if err != nil {
+		log.Fatalf("firebase.NewApp: %v", err)
+		return
+	}
+
+	storageClient, err = app.Storage(ctx)
+	if err != nil {
+		log.Fatalf("app.Storage: %v", err)
+		return
+	}
+
+	firestoreClient, err = app.Firestore(ctx)
+	if err != nil {
+		log.Fatalf("app.Firestore: %v", err)
+		return
+	}
+
+	authClient, err = app.Auth(ctx)
+	if err != nil {
+		firestoreClient.Close()
+		log.Fatalf("app.Auth: %v", err)
+		return
+	}
+}
+
+func parseToken(r *http.Request) (*auth.Token, error) {
 	auth := r.Header.Get("Authorization")
 	cookie, _ := r.Cookie("__session")
 	if !strings.HasPrefix(auth, "Bearer ") && cookie == nil {
@@ -39,45 +82,12 @@ func parseToken(c *auth.Client, ctx context.Context, r *http.Request) (*auth.Tok
 		return nil, errors.New("Unauthorized")
 	}
 
-	token, err := c.VerifyIDToken(ctx, idToken)
+	token, err := authClient.VerifyIDToken(ctx, idToken)
 	return token, err
 }
 
 // Post is triggered by HTTP Request
 func Post(w http.ResponseWriter, r *http.Request) {
-	ctx := context.Background()
-	opt := option.WithCredentialsFile("./key.json")
-	config := &firebase.Config{
-		ProjectID:     "fir-ivy-live-feed",
-		StorageBucket: "fir-ivy-live-feed.appspot.com",
-		DatabaseURL:   "https://fir-ivy-live-feed.firebaseio.com",
-	}
-	app, err := firebase.NewApp(ctx, config, opt)
-	if err != nil {
-		log.Fatalf("firebase.NewApp: %v", err)
-		return
-	}
-
-	storageClient, err := app.Storage(ctx)
-	if err != nil {
-		log.Fatalf("app.Storage: %v", err)
-		return
-	}
-
-	firestoreClient, err := app.Firestore(ctx)
-	if err != nil {
-		log.Fatalf("app.Firestore: %v", err)
-		return
-	}
-
-	authClient, err := app.Auth(ctx)
-	if err != nil {
-		firestoreClient.Close()
-		log.Fatalf("app.Auth: %v", err)
-		return
-	}
-
-	defer firestoreClient.Close()
 
 	if r.Method == http.MethodOptions {
 		w.Header().Set("Access-Control-Allow-Origin", "https://fir-ivy-live-feed.web.app")
@@ -92,7 +102,7 @@ func Post(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := parseToken(authClient, ctx, r)
+	token, err := parseToken(r)
 	if err != nil {
 		log.Fatalf("parseToken: %v", err.Error())
 		http.Error(w, err.Error(), http.StatusUnauthorized)
