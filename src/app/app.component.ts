@@ -99,19 +99,19 @@ export class AppComponent implements OnInit {
           )
         )
       )
-      .subscribe(
-        () => {
+      .subscribe({
+        next: () => {
           this.matSnackbar.open('Posted successfully!', '', { duration: 2000 });
         },
-        err => {
-          this.matSnackbar.open(err.statusText, '', { duration: 3000 });
+        error: err => {
+          this.matSnackbar.open(err, '', { duration: 3000 });
         },
-        () => {
+        complete: () => {
           this.matSnackbar.open('What is wrong? Why did not you post?', '', {
-            duration: 2000
+            duration: 3000
           });
         }
-      );
+      });
   }
 
   like(postId: string) {
@@ -127,6 +127,7 @@ export class AppComponent implements OnInit {
       input.click();
     }, 100);
     return fromEvent(input, 'change').pipe(
+      take(1),
       switchMap(() => {
         const file = input.files[0];
         if (file.size > MAX_FILE_SIZE) {

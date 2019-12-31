@@ -2,7 +2,8 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { AngularFireAuth } from '@angular/fire/auth';
 import { AngularFireFunctions } from '@angular/fire/functions';
-import { exhaustMap } from 'rxjs/operators';
+import { throwError } from 'rxjs';
+import { catchError,  exhaustMap } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root'
@@ -24,8 +25,9 @@ export class AppService {
         this.http.post('/Post', formData, {
           headers: {
             Authorization: `Bearer ${token}`
-          }
-        })
+          },
+          responseType: 'text'
+        }).pipe(catchError(err => throwError(err.statusText))),
       )
     );
   }
