@@ -1,5 +1,5 @@
 import { User } from './../app.interface';
-import { MatSnackBar } from '@angular/material';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { Component, OnInit, Input, ChangeDetectionStrategy } from '@angular/core';
 import { AngularFireAuth } from '@angular/fire/auth';
 

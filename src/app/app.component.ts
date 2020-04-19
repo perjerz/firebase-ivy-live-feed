@@ -18,7 +18,8 @@ import {
 import { map, switchMap, take, tap } from 'rxjs/operators';
 import { AppService } from './app.service';
 import { FeedDialogComponent } from './feed-dialog/feed-dialog.component';
-import { MatDialog, MatSnackBar } from '@angular/material';
+import { MatDialog } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import * as firebase from 'firebase';
 import { AngularFireStorage } from '@angular/fire/storage';
 
