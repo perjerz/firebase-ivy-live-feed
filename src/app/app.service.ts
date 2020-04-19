@@ -33,6 +33,6 @@ export class AppService {
   }
   toggleLike() {
     // TODO: race condition like
-    return this.afs.functions.httpsCallable('like');
+    return this.afs.httpsCallable('like');
   }
 }

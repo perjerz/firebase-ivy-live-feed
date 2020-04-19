@@ -22,7 +22,7 @@ export class FirebaseToolbarComponent implements OnInit {
   signIn() {
     const authProvider = new firebase.auth.FacebookAuthProvider();
     authProvider.addScope('email');
-    this.auth.auth
+    this.auth
       .signInWithPopup(authProvider)
       .then(() => {
         this.matSnackbar.open('Sign in successfully.');
@@ -33,6 +33,6 @@ export class FirebaseToolbarComponent implements OnInit {
   }
 
   signOut() {
-    this.auth.auth.signOut();
+    this.auth.signOut();
   }
 }
